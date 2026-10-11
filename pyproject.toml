@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-doc-assistant"
+version = "0.1.0"
+description = "Multi-step LangGraph agent that routes questions, calls retrieval and summarization tools, and answers with citations and chat memory, using Claude."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # Retrieval layer from the sibling repo. Local: `pip install -e ../rag-knowledge-pipeline`.
+    # From GitHub: "rag-knowledge-pipeline @ git+https://github.com/<you>/rag-knowledge-pipeline.git"
+    "rag-knowledge-pipeline",
+    "langgraph>=1.0",
+    "langgraph-checkpoint-sqlite>=3.0",
+    "langchain-core>=1.0",
+    "langchain-ollama>=1.0",
+    "langchain-anthropic>=1.7",
+    "streamlit>=1.35",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+docagent = "docagent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning:chromadb.*",
+    "ignore:Relevance scores must be between 0 and 1",
+]
