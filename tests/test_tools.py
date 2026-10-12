@@ -25,13 +25,12 @@ def test_long_documents_are_summarized_map_reduce(monkeypatch):
 def test_search_returns_labeled_passages(vectorstore):
     result = search_documents.invoke({"query": "password length"})
     assert result.startswith("[")
-    assert "relevance" in result
 
 
-def test_search_can_be_restricted_to_one_document(vectorstore):
+def test_source_is_a_soft_filter_that_prefers_the_named_document(vectorstore):
     result = search_documents.invoke({"query": "anything", "source": "nist/passwords.pdf"})
-    assert "[nist/passwords.pdf p.4]" in result
-    assert "policy/expenses.md" not in result
+    assert result.startswith("[nist/passwords.pdf p.4]")  # the named document ranks first...
+    assert "[policy/expenses.md]" in result               # ...but a wrong guess can't hide other documents
 
 
 def test_list_documents(vectorstore):

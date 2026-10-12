@@ -12,6 +12,7 @@ from langchain_core.tools import tool
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from ragpipe import get_settings, get_source_chunks, get_vectorstore, list_sources, search
 from ragpipe.llm import get_chat_model
+from ragpipe.retrieval import rrf_fuse
 
 from docagent.prompts import SUMMARY_PROMPT
 
@@ -75,10 +76,15 @@ def search_documents(query: str, source: str | None = None) -> str:
     resolved = resolve_source(source)
     if source and not resolved:
         return f"No document matches '{source}'. Call list_documents for valid paths, or search without `source`."
-    hits = search(query, k=get_settings().top_k, vectorstore=_store(), source=resolved)
+    k = get_settings().top_k
+    hits = search(query, k=k, vectorstore=_store(), source=resolved)
+    if resolved:
+        # Soft filter: small models often pick the wrong document, so also search everywhere and
+        # fuse. Passages from the named document still rank first when they match.
+        hits = rrf_fuse(hits, search(query, k=k, vectorstore=_store()), limit=k)
     if not hits:
         return "No passages found. The index may be empty."
-    return "\n\n".join(f"[{_label(doc)}] (relevance {score:.2f})\n{doc.page_content}" for doc, score in hits)
+    return "\n\n".join(f"[{_label(doc)}]\n{doc.page_content}" for doc, _ in hits)
 
 
 @tool(parse_docstring=True)

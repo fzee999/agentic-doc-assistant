@@ -1,0 +1,15 @@
+{"id": "search-expense-deadline", "question": "How long do I have to submit an expense claim before it needs my manager's approval?", "route": "documents", "tools": ["search_documents"], "answer_contains": ["90 days"]}
+{"id": "search-csf-functions", "question": "What are the six functions of the NIST Cybersecurity Framework 2.0?", "route": "documents", "tools": ["search_documents"], "answer_contains": ["Govern", "Identify", "Protect", "Detect", "Respond", "Recover"]}
+{"id": "search-password-length", "question": "What is the minimum password length NIST SP 800-63B-4 requires for single-factor authentication?", "route": "documents", "tools": ["search_documents"], "answer_contains": ["15 characters|15-character|fifteen characters"]}
+{"id": "search-failed-attempts", "question": "How many consecutive failed authentication attempts does NIST allow before an authenticator is disabled?", "route": "documents", "tools": ["search_documents"], "answer_contains": ["100"]}
+{"id": "search-password-manager", "question": "Which password manager does GitLab use?", "route": "documents", "tools": ["search_documents"], "answer_contains": ["1Password"]}
+{"id": "followup-csf-tier", "history": ["What are the four CSF Tiers?"], "question": "Which of those tiers is the most mature?", "route": "documents", "tools": ["search_documents"], "answer_contains": ["Adaptive"]}
+{"id": "summary-ransomware", "question": "Summarize GitLab's ransomware response guidance.", "route": "documents", "tools": ["summarize_document"], "answer_contains": ["SIRT"]}
+{"id": "summary-harassment", "question": "Give me an overview of the anti-harassment policy.", "route": "documents", "tools": ["summarize_document"], "answer_contains": ["harassment"]}
+{"id": "list-documents", "question": "Which documents can you search?", "route": "documents", "tools": ["list_documents"], "answer_contains": ["NIST", "GitLab"]}
+{"id": "compare-password-length", "question": "Does GitLab's password guidance agree with NIST on minimum password length?", "route": "compare", "answer_contains": ["15 characters|15-character|fifteen characters"]}
+{"id": "compare-password-managers", "question": "Do GitLab and NIST SP 800-63B-4 agree on using password managers?", "route": "compare", "answer_contains": ["1Password", "password manager|password managers"]}
+{"id": "chat-greeting", "question": "Hi there!", "route": "conversational"}
+{"id": "chat-thanks", "question": "Thanks, that's all I needed.", "route": "conversational"}
+{"id": "oos-poem", "question": "Write me a poem about cats.", "route": "out_of_scope"}
+{"id": "oos-trivia", "question": "What's the capital of France?", "route": "out_of_scope"}

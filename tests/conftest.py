@@ -1,3 +1,8 @@
+import os
+
+# Tests stay offline: plain vector search (the default hybrid_rerank mode loads a real model).
+os.environ["RETRIEVAL_MODE"] = "vector"
+
 import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import DeterministicFakeEmbedding

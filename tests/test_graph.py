@@ -2,7 +2,7 @@ from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
 
-from docagent.graph import Route, build_graph, render_transcript, stream_turn
+from docagent.graph import Plan, PlannedSearch, Route, build_graph, render_transcript, stream_turn
 from docagent.prompts import OUT_OF_SCOPE_REPLY
 
 
@@ -15,6 +15,10 @@ class ScriptedModel(GenericFakeChatModel):
 
 def scripted(*responses):
     return ScriptedModel(messages=iter(responses))
+
+
+def no_plan(messages):
+    return Plan(searches=[])
 
 
 def fixed_router(route):
@@ -31,6 +35,7 @@ def config(thread_id):
 
 def test_documents_route_runs_the_tool_loop(vectorstore):
     graph = build_graph(
+        planner=no_plan,
         agent_model=scripted(search_call("expense deadline"), AIMessage("Within 90 days [policy/expenses.md].")),
         router=fixed_router("documents"),
         chat_model=scripted(),
@@ -49,7 +54,7 @@ def test_summaries_are_delivered_without_a_second_agent_pass(vectorstore, monkey
 
     monkeypatch.setattr(docagent.tools, "map_reduce_summary", lambda text, source, title, focus="": "- Claims expire after 90 days.")
     summarize_call = AIMessage("", tool_calls=[{"name": "summarize_document", "args": {"source": "expenses"}, "id": "call_s"}])
-    graph = build_graph(agent_model=scripted(summarize_call), router=fixed_router("documents"),
+    graph = build_graph(planner=no_plan, agent_model=scripted(summarize_call), router=fixed_router("documents"),
                         chat_model=scripted(), checkpointer=InMemorySaver())
 
     steps = list(stream_turn(graph, "Summarize the expense policy", "t1"))
@@ -57,15 +62,34 @@ def test_summaries_are_delivered_without_a_second_agent_pass(vectorstore, monkey
     assert steps[-1][1] == "Summary of [policy/expenses.md]:\n- Claims expire after 90 days."
 
 
+def test_compare_route_plans_one_search_per_document(vectorstore):
+    plan = Plan(searches=[
+        PlannedSearch(document="expenses", query="claims 90 days"),
+        PlannedSearch(document="Password Guidance", query="15 characters"),
+    ])
+    answer = "Expenses: 90 days [policy/expenses.md]. Passwords: 15 characters [nist/passwords.pdf p.4]."
+    graph = build_graph(agent_model=scripted(AIMessage(answer)), router=fixed_router("compare"),
+                        planner=lambda messages: plan, chat_model=scripted(), checkpointer=InMemorySaver())
+
+    steps = list(stream_turn(graph, "How do the two documents compare?", "t1"))
+    assert [node for node, _ in steps] == ["route_question", "plan", "research", "compare_answer", "answer"]
+    assert steps[-1] == ("answer", answer)
+
+    state = graph.get_state(config("t1")).values
+    assert "in policy/expenses.md" in state["research"]   # guessed names resolved per search
+    assert "in nist/passwords.pdf" in state["research"]
+    assert [type(m).__name__ for m in state["messages"]] == ["HumanMessage", "AIMessage"]  # text-only append
+
+
 def test_out_of_scope_skips_the_agent(vectorstore):
-    graph = build_graph(agent_model=scripted(), router=fixed_router("out_of_scope"),
+    graph = build_graph(planner=no_plan, agent_model=scripted(), router=fixed_router("out_of_scope"),
                         chat_model=scripted(), checkpointer=InMemorySaver())
     state = graph.invoke({"messages": [HumanMessage("Write me a poem")]}, config("t1"))
     assert state["messages"][-1].text == OUT_OF_SCOPE_REPLY
 
 
 def test_conversational_reply_is_text_only(vectorstore):
-    graph = build_graph(agent_model=scripted(), router=fixed_router("conversational"),
+    graph = build_graph(planner=no_plan, agent_model=scripted(), router=fixed_router("conversational"),
                         chat_model=scripted(AIMessage("Hi! Ask me about your documents.")),
                         checkpointer=InMemorySaver())
     state = graph.invoke({"messages": [HumanMessage("hello")]}, config("t1"))
@@ -74,6 +98,7 @@ def test_conversational_reply_is_text_only(vectorstore):
 
 def test_memory_is_per_thread_and_history_is_append_only(vectorstore):
     graph = build_graph(
+        planner=no_plan,
         agent_model=scripted(
             search_call("expenses"), AIMessage("90 days [policy/expenses.md]."),
             search_call("passwords", "call_2"), AIMessage("15 characters [nist/passwords.pdf p.4]."),
@@ -96,6 +121,7 @@ def test_memory_is_per_thread_and_history_is_append_only(vectorstore):
 
 def test_stream_turn_reports_each_step(vectorstore):
     graph = build_graph(
+        planner=no_plan,
         agent_model=scripted(search_call("expenses"), AIMessage("90 days.")),
         router=fixed_router("documents"),
         chat_model=scripted(),

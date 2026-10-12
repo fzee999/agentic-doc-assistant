@@ -26,7 +26,15 @@ def main(argv: list[str] | None = None) -> None:
 
     sub.add_parser("sources", help="list indexed documents")
 
+    p = sub.add_parser("eval", help="score routing, tool choice and answers on an eval set (calls the LLM)")
+    p.add_argument("--file", default="eval/agent_questions.jsonl")
+    p.add_argument("--only", help="comma-separated item ids to run")
+    p.add_argument("--out", help="save full results (answers, steps) as JSON")
+
     args = parser.parse_args(argv)
+    if args.command == "eval":
+        _eval(args)
+        return
     if args.command == "ingest":
         from ragpipe import ingest_path
 
@@ -59,6 +67,32 @@ def _run_turn(graph, text: str, thread_id: str) -> None:
             print(f"\n{step}\n")
         else:
             print(f"  [{node}] {step}")
+
+
+def _eval(args: argparse.Namespace) -> None:
+    import json
+
+    from docagent.evaluate import load_items, run_eval
+
+    items = load_items(args.file)
+    if args.only:
+        wanted = set(args.only.split(","))
+        items = [item for item in items if item["id"] in wanted]
+    result = run_eval(items)
+
+    def mark(ok: bool | None) -> str:
+        return "-" if ok is None else ("ok" if ok else "FAIL")
+
+    print(f"{'id':<28} {'route':<26} {'tools':<6} {'answer':<6} secs")
+    for row in result["rows"]:
+        route = f"{row['route']} {mark(row['route_ok'])}"
+        print(f"{row['id']:<28} {route:<26} {mark(row['tools_ok']):<6} {mark(row['answer_ok']):<6} {row['seconds']}")
+    print(f"\nrouting_accuracy={result['routing_accuracy']}  tool_accuracy={result['tool_accuracy']}  "
+          f"answer_accuracy={result['answer_accuracy']}  mean_seconds={result['mean_seconds']}")
+    if args.out:
+        with open(args.out, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
+        print(f"Saved details to {args.out}")
 
 
 def _chat(thread_id: str) -> None:

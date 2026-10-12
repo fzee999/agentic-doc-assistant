@@ -20,9 +20,10 @@ ROUTER_PROMPT = """You route messages for a document assistant. Its knowledge ba
 {catalog}
 
 Classify the user's latest message in the conversation below:
-- "documents": needs information from the knowledge base, including follow-ups about earlier answers and requests to list or summarize documents. When unsure, choose this.
+- "compare": asks whether or how two or more documents or sources agree, differ, or compare (e.g. "Does GitLab's password policy agree with NIST?", "How does X differ from Y?"). Always choose "compare" for these, even though answering them also needs document lookups.
+- "documents": any other request for information from the knowledge base, including follow-ups about earlier answers and requests to list or summarize documents. When unsure whether a message needs the documents at all, choose this.
 - "conversational": greetings, thanks, or questions about the assistant or the conversation itself that need no document lookup.
-- "out_of_scope": tasks unrelated to the knowledge base, such as writing code or poems, general trivia, or personal advice.
+- "out_of_scope": anything else, such as writing code or poems, personal advice, and general-knowledge questions (geography, history, math, trivia), even short ones.
 
 <conversation>
 {transcript}
@@ -37,7 +38,26 @@ OUT_OF_SCOPE_REPLY = (
     '"What is the expense reimbursement deadline?" or "Summarize the NIST Cybersecurity Framework."'
 )
 
-SUMMARY_PROMPT = """Write a concise summary of the document's content in short bullet points:
+PLAN_PROMPT = """You plan searches for a question that compares documents in a knowledge base.
+
+Documents (path: title):
+{catalog}
+
+Write one search per document the question involves (2 to 4 searches). For each, give the
+document path from the list above and a short keyword query for what to look up in it.
+
+<conversation>
+{transcript}
+</conversation>"""
+
+COMPARE_PROMPT = """You answer a comparison question using only the passages below, which were retrieved
+separately from each document involved.
+
+- For each document, state what it says on the point in question, citing it like [gitlab-handbook/expenses.md] or [nist/NIST.SP.800-63B-4.pdf p.25].
+- Then give a direct conclusion: do they agree, differ, or does one not address the point?
+- If a document's passages don't cover the point, say that document doesn't address it. Don't fill gaps from general knowledge."""
+
+SUMMARY_PROMPT ="""Write a concise summary of the document's content in short bullet points:
 its purpose, its main sections, and the concrete rules, limits, deadlines and numbers it sets.
 State the content directly ("Meals are reimbursable up to $120 a day"), not what the document is about.
 Only include what the document says."""
