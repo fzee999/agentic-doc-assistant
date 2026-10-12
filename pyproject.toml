@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     # Retrieval layer from the sibling repo. Local: `pip install -e ../rag-knowledge-pipeline`.
-    # From GitHub: "rag-knowledge-pipeline @ git+https://github.com/<you>/rag-knowledge-pipeline.git"
+    # From GitHub: "rag-knowledge-pipeline @ git+https://github.com/fzee999/rag-knowledge-pipeline.git"
     "rag-knowledge-pipeline",
     "langgraph>=1.0",
     "langgraph-checkpoint-sqlite>=3.0",

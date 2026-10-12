@@ -2,7 +2,7 @@
 
 A multi-step LangGraph agent that routes each question, calls retrieval and summarization tools, and
 answers with citations, keeping per-conversation memory. It runs fully locally with Ollama
-(`llama3.1:8b`) or with Claude, and retrieves through [rag-knowledge-pipeline](../rag-knowledge-pipeline).
+(`llama3.1:8b`) or with Claude, and retrieves through [rag-knowledge-pipeline](https://github.com/fzee999/rag-knowledge-pipeline).
 
 ```mermaid
 flowchart TD
@@ -53,7 +53,19 @@ Prerequisites: Python 3.11 or 3.12, and [Ollama](https://ollama.com) with a tool
 ollama pull llama3.1:8b
 ```
 
-Clone this repo next to `rag-knowledge-pipeline`, then:
+This repo uses [rag-knowledge-pipeline](https://github.com/fzee999/rag-knowledge-pipeline) as a library, so clone both side by side:
+
+```bash
+git clone https://github.com/fzee999/rag-knowledge-pipeline.git
+```
+```bash
+git clone https://github.com/fzee999/agentic-doc-assistant.git
+```
+```bash
+cd agentic-doc-assistant
+```
+
+Then:
 
 ```bash
 py -3.12 -m venv .venv
